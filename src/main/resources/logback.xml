@@ -1,0 +1,14 @@
+<configuration>
+    <property name="pattern" value="[%-5level] [%thread] %d{yyyy-MM-dd HH:mm:ss.SSS} %c.%M:%L  %m%n"/>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${pattern}</pattern>
+        </encoder>
+    </appender>
+    <!--root logger-->
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
+
