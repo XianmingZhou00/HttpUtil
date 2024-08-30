@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -143,6 +144,33 @@ class HttpUtilTest {
                 .execute();
 
         assertEquals(400, response.code());
+    }
+
+    @Test
+    public void testExecuteAsyncSuccess() throws Exception {
+        String url = mockWebServer.url("/").toString();
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("response body"));
+
+        CompletableFuture<Response> futureResponse = HttpUtil.get(url)
+                .executeAsync();
+
+        Response response = futureResponse.get();
+        assertNotNull(response);
+        assertTrue(response.isSuccessful());
+        assertEquals("response body", response.body().string());
+    }
+
+
+    @Test
+    public void testExecuteAsyncNetworkError() {
+        String url = "http://localhost:9999"; // Invalid URL to simulate network error
+
+        CompletableFuture<Response> futureResponse = HttpUtil.get(url)
+                .executeAsync();
+
+        assertThrows(Exception.class, futureResponse::get);
     }
 
     private String buildUrl(String path) {

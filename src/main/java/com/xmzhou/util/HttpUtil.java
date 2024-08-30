@@ -13,6 +13,7 @@ import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -267,13 +268,7 @@ public class HttpUtil {
             return this;
         }
 
-        /**
-         * Executes the HTTP request and returns the response.
-         *
-         * @return the HTTP response
-         * @throws Exception if an error occurs during the request
-         */
-        public Response execute() throws Exception {
+        private Request buildRequest() {
             Request request;
             switch (httpMethod) {
                 case GET:
@@ -291,6 +286,17 @@ public class HttpUtil {
                 default:
                     throw new IllegalArgumentException("http method not support");
             }
+            return request;
+        }
+
+        /**
+         * Executes the HTTP request and returns the response.
+         *
+         * @return the HTTP response
+         * @throws Exception if an error occurs during the request
+         */
+        public Response execute() throws Exception {
+            Request request = buildRequest();
             try (Response response = httpClient.newCall(request).execute()) {
                 String responseBody = response.body().string();
                 ResponseBody newBody = ResponseBody.create(response.body().contentType(), responseBody);
@@ -302,6 +308,41 @@ public class HttpUtil {
             } catch (Exception e) {
                 throw new RuntimeException(e.getMessage());
             }
+        }
+
+        /**
+         * Async Executes the HTTP request and returns the response.
+         *
+         * @return CompletableFuture
+         * @throws Exception if an error occurs during the request
+         */
+        public CompletableFuture<Response> executeAsync() {
+            CompletableFuture<Response> future = new CompletableFuture<>();
+            Request request = buildRequest();
+            httpClient.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                    future.completeExceptionally(e);
+                }
+
+                @Override
+                public void onResponse(@NotNull Call call, @NotNull Response response) {
+                    try {
+                        ResponseBody responseBody = response.body();
+                        ResponseBody newBody = ResponseBody.create(responseBody.contentType(), responseBody.bytes());
+                        Response copiedResponse = response.newBuilder()
+                                .body(newBody)
+                                .build();
+                        future.complete(copiedResponse);
+                    } catch (Exception e) {
+                        future.completeExceptionally(new IOException("Response body is null"));
+                    } finally {
+                        // 确保关闭响应体
+                        response.close();
+                    }
+                }
+            });
+            return future;
         }
     }
 
