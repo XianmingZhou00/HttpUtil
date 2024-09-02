@@ -195,11 +195,19 @@ class HttpUtilTest {
                     .readTimeoutSeconds(2)
                     .execute();
             fail("Expected SocketTimeoutException to be thrown");
-        } catch (SocketTimeoutException e) {
-            // test ok
         } catch (Exception e) {
-            fail("Unexpected exception thrown: " + e.getMessage());
+            if (e instanceof SocketTimeoutException) {
+                // ok
+            } else {
+                fail("Unexpected exception thrown: " + e.getMessage());
+            }
         }
+    }
+
+    @Test
+    public void testLogLevel() throws Exception {
+        HttpUtil.setLogLevel("debug");
+        HttpUtil.get("https://www.baidu.com").execute();
     }
 
     private String buildUrl(String path) {

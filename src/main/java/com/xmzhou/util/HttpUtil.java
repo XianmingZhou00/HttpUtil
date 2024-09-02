@@ -1,5 +1,6 @@
 package com.xmzhou.util;
 
+import ch.qos.logback.classic.Level;
 import com.moczul.ok2curl.CurlInterceptor;
 import okhttp3.*;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -88,6 +89,32 @@ public class HttpUtil {
      */
     public static RequestBuilder uploadFile(String url) {
         return new RequestBuilder(url, HttpMethod.POST);
+    }
+
+    public static void setLogLevel(String level) {
+        ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) LOG;
+        switch (level.toUpperCase()) {
+            case "TRACE":
+                logger.setLevel(Level.TRACE);
+                break;
+            case "DEBUG":
+                logger.setLevel(Level.DEBUG);
+                break;
+            case "INFO":
+                logger.setLevel(Level.INFO);
+                break;
+            case "WARN":
+                logger.setLevel(Level.WARN);
+                break;
+            case "ERROR":
+                logger.setLevel(Level.ERROR);
+                break;
+            case "OFF":
+                logger.setLevel(Level.OFF);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported log level: " + level);
+        }
     }
 
     /**
@@ -336,7 +363,7 @@ public class HttpUtil {
                         .build();
             } catch (Exception e) {
                 LOG.error("HTTP Request Execute Failed", e);
-                throw new RuntimeException(e.getMessage());
+                throw e;
             }
         }
 
