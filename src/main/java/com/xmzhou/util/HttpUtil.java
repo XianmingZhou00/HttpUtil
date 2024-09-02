@@ -8,8 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.ConnectException;
-import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -336,9 +334,8 @@ public class HttpUtil {
                 return response.newBuilder()
                         .body(newBody)
                         .build();
-            } catch (ConnectException | SocketTimeoutException e) {
-                throw e;
             } catch (Exception e) {
+                LOG.error("HTTP Request Execute Failed", e);
                 throw new RuntimeException(e.getMessage());
             }
         }
