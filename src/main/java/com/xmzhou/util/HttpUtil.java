@@ -83,10 +83,10 @@ public class HttpUtil {
     }
 
     /**
-     * Creates a DELETE request builder.
+     * Creates a POST request builder.
      *
-     * @param url the URL to send the DELETE request to
-     * @return a RequestBuilder for the DELETE request
+     * @param url the URL to send the POST request to
+     * @return a RequestBuilder for the POST request
      */
     public static RequestBuilder uploadFile(String url) {
         return new RequestBuilder(url, HttpMethod.POST);
