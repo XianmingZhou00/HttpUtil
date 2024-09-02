@@ -37,7 +37,10 @@ HttpUtil.delete(url)
  HttpUtil.uploadFile(url)
          .formData(Collections.singletonMap("description", "Test file"), Collections.singletonList(uploadFile))
          .execute();
-
+ 
+ // support async http request
+ CompletableFuture<Response> response = HttpUtil.get(url)
+                                                .executeAsync();
 ```
 ## LICENSE
 Apache License 2.0
