@@ -3,7 +3,6 @@ package com.xmzhou.util;
 import com.moczul.ok2curl.CurlInterceptor;
 import okhttp3.*;
 import okhttp3.logging.HttpLoggingInterceptor;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,6 +97,7 @@ public class HttpUtil {
      */
     public static class RequestBuilder {
         private static volatile OkHttpClient httpClient;
+        private String url;
         private final Request.Builder requestBuilder;
         private RequestBody requestBody;
         private final HttpMethod httpMethod;
@@ -106,10 +106,11 @@ public class HttpUtil {
             if (Objects.isNull(url) || url.isEmpty()) {
                 throw new IllegalArgumentException("request url is null");
             }
+            this.url = url;
             initHttpClient();
             this.httpMethod = httpMethod;
             requestBuilder = new Request.Builder();
-            requestBuilder.url(url);
+            requestBuilder.url(this.url);
         }
 
         private Interceptor httpLoggingInterceptor() {
@@ -183,9 +184,11 @@ public class HttpUtil {
          * @return the current RequestBuilder instance
          */
         public RequestBuilder param(String key, String value) {
-            HttpUrl.Builder urlBuilder = HttpUrl.parse(requestBuilder.getUrl$okhttp().toString()).newBuilder();
+            HttpUrl.Builder urlBuilder = HttpUrl.parse(this.url).newBuilder();
             urlBuilder.addQueryParameter(key, value);
-            requestBuilder.url(urlBuilder.build());
+            HttpUrl httpUrl = urlBuilder.build();
+            requestBuilder.url(httpUrl);
+            this.url = httpUrl.toString();
             return this;
         }
 
@@ -197,13 +200,15 @@ public class HttpUtil {
          * @return the current RequestBuilder instance
          */
         public RequestBuilder params(Map<String, ?> params) {
-            HttpUrl.Builder urlBuilder = HttpUrl.parse(requestBuilder.getUrl$okhttp().toString()).newBuilder();
+            HttpUrl.Builder urlBuilder = HttpUrl.parse(this.url).newBuilder();
             if (Objects.nonNull(params) && !params.isEmpty()) {
                 for (Map.Entry<String, ?> entry : params.entrySet()) {
                     urlBuilder.addQueryParameter(entry.getKey(), String.valueOf(entry.getValue()));
                 }
             }
-            requestBuilder.url(urlBuilder.build());
+            HttpUrl httpUrl = urlBuilder.build();
+            requestBuilder.url(httpUrl);
+            this.url = httpUrl.toString();
             return this;
         }
 
@@ -235,7 +240,7 @@ public class HttpUtil {
             for (UploadFile uploadFile : files) {
                 bodyBuilder.addFormDataPart(uploadFile.getName(),
                         uploadFile.getFileName(),
-                        RequestBody.create(uploadFile.getFileData())
+                        RequestBody.create(null, uploadFile.getFileData())
                 );
             }
             for (Map.Entry<String, ?> entry : form.entrySet()) {
@@ -321,12 +326,12 @@ public class HttpUtil {
             Request request = buildRequest();
             httpClient.newCall(request).enqueue(new Callback() {
                 @Override
-                public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                public void onFailure(Call call, IOException e) {
                     future.completeExceptionally(e);
                 }
 
                 @Override
-                public void onResponse(@NotNull Call call, @NotNull Response response) {
+                public void onResponse(Call call, Response response) {
                     try {
                         ResponseBody responseBody = response.body();
                         ResponseBody newBody = ResponseBody.create(responseBody.contentType(), responseBody.bytes());
