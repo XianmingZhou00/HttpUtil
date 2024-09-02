@@ -1,6 +1,7 @@
 package com.xmzhou;
 
 import com.xmzhou.util.HttpUtil;
+import okhttp3.HttpUrl;
 import okhttp3.Response;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -11,11 +12,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -162,7 +165,6 @@ class HttpUtilTest {
         assertEquals("response body", response.body().string());
     }
 
-
     @Test
     public void testExecuteAsyncNetworkError() {
         String url = "http://localhost:9999"; // Invalid URL to simulate network error
@@ -171,6 +173,33 @@ class HttpUtilTest {
                 .executeAsync();
 
         assertThrows(Exception.class, futureResponse::get);
+    }
+
+    @Test
+    public void testReadTimeoutSucceed() throws Exception {
+        mockWebServer.enqueue(new MockResponse().setBody("response body").setBodyDelay(3, TimeUnit.SECONDS));
+        HttpUrl url = mockWebServer.url("/timeout");
+        Response response = HttpUtil.get(url.toString())
+                .readTimeoutSeconds(4)
+                .connectTimeoutSeconds(10)
+                .execute();
+        assertEquals("response body", response.body().string());
+    }
+
+    @Test
+    public void testReadTimeoutFailure() {
+        mockWebServer.enqueue(new MockResponse().setBody("response body").setBodyDelay(3, TimeUnit.SECONDS));
+        HttpUrl url = mockWebServer.url("/timeout");
+        try {
+            HttpUtil.get(url.toString())
+                    .readTimeoutSeconds(2)
+                    .execute();
+            fail("Expected SocketTimeoutException to be thrown");
+        } catch (SocketTimeoutException e) {
+            // test ok
+        } catch (Exception e) {
+            fail("Unexpected exception thrown: " + e.getMessage());
+        }
     }
 
     private String buildUrl(String path) {

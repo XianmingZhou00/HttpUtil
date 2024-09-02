@@ -101,6 +101,7 @@ public class HttpUtil {
         private final Request.Builder requestBuilder;
         private RequestBody requestBody;
         private final HttpMethod httpMethod;
+        private HttpConfig httpConfig;
 
         private RequestBuilder(String url, HttpMethod httpMethod) {
             if (Objects.isNull(url) || url.isEmpty()) {
@@ -111,6 +112,8 @@ public class HttpUtil {
             this.httpMethod = httpMethod;
             requestBuilder = new Request.Builder();
             requestBuilder.url(this.url);
+            httpConfig = HttpConfig.builder().build();
+            requestBuilder.tag(HttpConfig.class, httpConfig);
         }
 
         private Interceptor httpLoggingInterceptor() {
@@ -128,8 +131,11 @@ public class HttpUtil {
                 Request request = chain.request();
                 HttpConfig config = request.tag(HttpConfig.class);
                 config = config == null ? new HttpConfig() : config;
-                return chain.withConnectTimeout(Optional.of(config.getConnectTimeoutSeconds()).orElse(60), TimeUnit.SECONDS).proceed(request);
-
+                return chain
+                        .withConnectTimeout(Optional.of(config.getConnectTimeoutSeconds()).orElse(60), TimeUnit.SECONDS)
+                        .withReadTimeout(Optional.of(config.getReadTimeoutSeconds()).orElse(60), TimeUnit.SECONDS)
+                        .withWriteTimeout(Optional.of(config.getWriteTimeoutSeconds()).orElse(60), TimeUnit.SECONDS)
+                        .proceed(request);
             };
         }
 
@@ -269,7 +275,29 @@ public class HttpUtil {
          * @return the current RequestBuilder instance
          */
         public RequestBuilder connectTimeoutSeconds(int connectTimeoutSeconds) {
-            requestBuilder.tag(HttpConfig.class, HttpConfig.builder().connectTimeoutSeconds(connectTimeoutSeconds).build());
+            httpConfig.setConnectTimeoutSeconds(connectTimeoutSeconds);
+            return this;
+        }
+
+        /**
+         * Sets the read timeout for the request.
+         *
+         * @param readTimeoutSeconds the read timeout in seconds
+         * @return the current RequestBuilder instance
+         */
+        public RequestBuilder readTimeoutSeconds(int readTimeoutSeconds) {
+            httpConfig.setReadTimeoutSeconds(readTimeoutSeconds);
+            return this;
+        }
+
+        /**
+         * Sets the write timeout for the request.
+         *
+         * @param writeTimeoutSeconds the write timeout in seconds
+         * @return the current RequestBuilder instance
+         */
+        public RequestBuilder writeTimeoutSeconds(int writeTimeoutSeconds) {
+            httpConfig.setWriteTimeoutSeconds(writeTimeoutSeconds);
             return this;
         }
 
