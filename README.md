@@ -5,6 +5,10 @@ This is a library for encapsulating HTTP requests based on OkHttp3, designed to 
 
 ## Examples
 ```java
+ // Set Log Level
+ HttpUtil.setLogLevel("DEBUG");
+
+
  // GET request
  HttpUtil.get("https://www.google.com")
          .execute();
