@@ -208,7 +208,7 @@ public class HttpUtil {
         }
 
         /**
-         * Adds a query parameter to the request URL.
+         * Add a query parameter to the request URL.
          *
          * @param key   the query parameter key
          * @param value the query parameter value
@@ -356,8 +356,11 @@ public class HttpUtil {
         public Response execute() throws Exception {
             Request request = buildRequest();
             try (Response response = httpClient.newCall(request).execute()) {
-                String responseBody = response.body().string();
-                ResponseBody newBody = ResponseBody.create(response.body().contentType(), responseBody);
+                if (response.body() == null) {
+                    LOG.error("Response body is null");
+                    throw new IllegalStateException("Response body is null");
+                }
+                ResponseBody newBody = ResponseBody.create(response.body().contentType(), response.body().bytes());
                 return response.newBuilder()
                         .body(newBody)
                         .build();
@@ -386,6 +389,10 @@ public class HttpUtil {
                 public void onResponse(Call call, Response response) {
                     try {
                         ResponseBody responseBody = response.body();
+                        if (responseBody == null) {
+                            LOG.error("Response body is null");
+                            throw new IllegalStateException("Response body is null");
+                        }
                         ResponseBody newBody = ResponseBody.create(responseBody.contentType(), responseBody.bytes());
                         Response copiedResponse = response.newBuilder()
                                 .body(newBody)
